@@ -6,6 +6,10 @@
 <title>Infinity Hub</title>
 
 <style>
+:root {
+    --primary-color: #7c5cff;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -40,7 +44,7 @@ header {
 .logo {
     font-size: 25px;
     font-weight: 900;
-    color: #7c5cff;
+    color: var(--primary-color);
 }
 
 button {
@@ -48,7 +52,7 @@ button {
     border: none;
     padding: 12px 18px;
     border-radius: 12px;
-    background: #7c5cff;
+    background: var(--primary-color);
     color: white;
     transition: 0.3s;
     margin: 5px;
@@ -84,7 +88,7 @@ nav button {
 .hero {
     padding: 40px;
     border-radius: 25px;
-    background: linear-gradient(135deg, #7c5cff, #00d4ff);
+    background: linear-gradient(135deg, var(--primary-color), #00d4ff);
     animation: fade 1s;
 }
 
@@ -167,13 +171,44 @@ nav button {
     font-size: 30px;
 }
 
-input {
+input[type="text"] {
     padding: 12px;
     border-radius: 10px;
     border: 0;
     width: 80%;
     max-width: 300px;
     margin: 10px 0;
+}
+
+input[type="color"] {
+    cursor: pointer;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+.toast-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(20, 20, 35, 0.95);
+    border: 1px solid var(--primary-color);
+    padding: 15px 25px;
+    border-radius: 12px;
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    animation: fade 0.3s ease-in-out;
+    z-index: 100;
+}
+
+.achievement-badge {
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    margin-bottom: 8px;
 }
 
 footer {
@@ -198,13 +233,19 @@ footer {
 
 <header>
     <div class="logo">∞ Infinity Hub</div>
-    <button onclick="toggleTheme()">🌗 Theme</button>
+    <div>
+        <label style="margin-right: 8px;">Theme Color:</label>
+        <input type="color" id="themePicker" value="#7c5cff" onchange="setCustomTheme(this.value)">
+        <button onclick="toggleTheme()">🌗 Mode</button>
+    </div>
 </header>
 
 <nav>
     <button onclick="showPage('home')">🏠 Home</button>
     <button onclick="showPage('games')">🎮 Games</button>
     <button onclick="showPage('brain')">🧠 Brain</button>
+    <button onclick="showPage('creative')">🎨 Creative</button>
+    <button onclick="showPage('music')">🎵 Music</button>
     <button onclick="showPage('profile')">👤 Profile</button>
 </nav>
 
@@ -216,7 +257,7 @@ footer {
             <h1>Welcome Player</h1>
             <p>Play games, earn XP, unlock achievements, and level up!</p>
             <br>
-            <button onclick="earn(10)">Claim Daily XP</button>
+            <button onclick="addXP(10)">Claim Daily XP</button>
         </div>
 
         <div class="stats">
@@ -270,8 +311,31 @@ footer {
         <h1>🧠 Brain Training</h1>
         <div class="card">
             <h2>🎯 Daily Mission</h2>
-            <p id="missionText">Complete a task to earn rewards.</p>
+            <p id="missionText">Complete your daily challenge to earn rewards.</p>
+            <br>
             <button onclick="mission()">Complete Mission</button>
+        </div>
+    </section>
+
+    <!-- CREATIVE SECTION -->
+    <section id="creative" class="hidden">
+        <h1>🎨 Creative Studio</h1>
+        <div class="card">
+            <h2>Canvas & Canvas Tools</h2>
+            <p>Design your own pixel artwork or sketches here.</p>
+            <br>
+            <button onclick="addXP(20); unlockAchievement('Artist');">Create Sketch</button>
+        </div>
+    </section>
+
+    <!-- MUSIC SECTION -->
+    <section id="music" class="hidden">
+        <h1>🎵 Music Zone</h1>
+        <div class="card">
+            <h2>Sound Studio</h2>
+            <p>Create custom synth loops and audio patterns.</p>
+            <br>
+            <button onclick="addXP(20); unlockAchievement('Maestro');">Generate Beat</button>
         </div>
     </section>
 
@@ -279,8 +343,9 @@ footer {
     <section id="profile" class="hidden">
         <h1>👤 Profile & Achievements</h1>
         <div class="card">
-            <h2>🏆 Achievements</h2>
-            <p id="achievementsList">None yet</p>
+            <h2>🏆 Achievements Unlocked</h2>
+            <br>
+            <div id="achievementsList">No achievements unlocked yet.</div>
         </div>
     </section>
 
@@ -290,69 +355,23 @@ footer {
     Infinity Hub © 2026
 </footer>
 
+<!-- Inline Page Navigation & Mini-game Handler -->
 <script>
-let data = JSON.parse(localStorage.getItem("player")) || {
-    xp: 0,
-    coins: 0,
-    level: 1
-};
-
-let achievements = JSON.parse(localStorage.getItem("achievements")) || [];
-
-function save() {
-    localStorage.setItem("player", JSON.stringify(data));
-    localStorage.setItem("achievements", JSON.stringify(achievements));
-    update();
-}
-
-function update() {
-    document.getElementById("xp").innerText = data.xp;
-    document.getElementById("coins").innerText = data.coins;
-    document.getElementById("level").innerText = data.level;
-    
-    let percent = (data.xp % 100);
-    document.getElementById("xpbar").style.width = percent + "%";
-
-    document.getElementById("achievementsList").innerHTML = 
-        achievements.join("<br>") || "None yet";
-}
-
-function earn(amount) {
-    data.xp += amount;
-    data.coins += 10;
-
-    if (data.xp >= 100) {
-        data.level++;
-        data.xp = data.xp % 100;
-        unlock("Level Up!");
-    }
-
-    save();
-}
-
-function unlock(name) {
-    if (!achievements.includes(name)) {
-        achievements.push(name);
-        alert("🏆 Achievement Unlocked: " + name);
-        save();
-    }
-}
-
 function showPage(id) {
     document.querySelectorAll("section").forEach(s => s.classList.add("hidden"));
     document.getElementById(id).classList.remove("hidden");
-    document.getElementById("gameArea").innerHTML = "";
+    const gameArea = document.getElementById("gameArea");
+    if (gameArea) gameArea.innerHTML = "";
 }
 
 function toggleTheme() {
     document.body.classList.toggle("light");
 }
 
-/* MINIGAMES */
+/* --- MINIGAMES --- */
 
-// Memory Match Game
+// Memory Match
 let firstCard = null;
-
 function memoryGame() {
     let emojis = ["🔥", "🎮", "⭐", "🚀", "🎵", "💎", "🌎", "🍀"];
     let cards = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
@@ -369,13 +388,12 @@ function memoryGame() {
 
 function flip(btn, value) {
     btn.innerText = value;
-
     if (!firstCard) {
         firstCard = { btn, value };
     } else {
         if (firstCard.value === value) {
-            earn(20);
-            unlock("Memory Master");
+            addXP(20);
+            unlockAchievement("Memory Master");
         } else {
             let temp = firstCard;
             setTimeout(() => {
@@ -387,7 +405,7 @@ function flip(btn, value) {
     }
 }
 
-// Typing Game
+// Typing Challenge
 function typingGame() {
     let words = ["future", "creator", "music", "technology", "world"];
     let word = words[Math.floor(Math.random() * words.length)];
@@ -395,22 +413,21 @@ function typingGame() {
     document.getElementById("gameArea").innerHTML = `
         <div class="card">
             <h2>Type: <strong>${word}</strong></h2>
-            <input id="typingInput" placeholder="Type here...">
+            <input type="text" id="typingInput" placeholder="Type word here...">
             <br>
-            <button onclick="checkType('${word}')">Check</button>
+            <button onclick="checkType('${word}')">Submit</button>
         </div>
     `;
 }
 
 function checkType(word) {
     let val = document.getElementById("typingInput").value;
-    if (val === word) {
-        alert("Correct!");
-        earn(15);
-        unlock("Fast Typist");
+    if (val.trim().toLowerCase() === word.toLowerCase()) {
+        addXP(15);
+        unlockAchievement("Fast Typist");
         typingGame();
     } else {
-        alert("Wrong! Try again.");
+        notifyUser("Incorrect, try again!");
     }
 }
 
@@ -427,7 +444,7 @@ function quizGame() {
     document.getElementById("gameArea").innerHTML = `
         <div class="card">
             <h2>${q[0]}</h2>
-            <input id="quizInput" placeholder="Your answer...">
+            <input type="text" id="quizInput" placeholder="Your answer...">
             <br>
             <button onclick="checkQuiz('${q[1]}')">Answer</button>
         </div>
@@ -436,13 +453,12 @@ function quizGame() {
 
 function checkQuiz(correct) {
     let val = document.getElementById("quizInput").value;
-    if (val.toLowerCase() === correct.toLowerCase()) {
-        alert("Correct!");
-        earn(25);
-        unlock("Quiz Champion");
+    if (val.trim().toLowerCase() === correct.toLowerCase()) {
+        addXP(25);
+        unlockAchievement("Quiz Champion");
         quizGame();
     } else {
-        alert("Incorrect! Correct answer was: " + correct);
+        notifyUser("Incorrect! Answer was: " + correct);
     }
 }
 
@@ -450,7 +466,7 @@ function checkQuiz(correct) {
 function startReaction() {
     document.getElementById("gameArea").innerHTML = `
         <div class="card">
-            <h2>Wait for the background to turn green...</h2>
+            <h2>Get ready... click when screen turns green!</h2>
         </div>
     `;
 
@@ -461,27 +477,25 @@ function startReaction() {
 
         document.body.onclick = function () {
             let time = Date.now() - start;
-            alert("Your reaction time: " + time + "ms");
+            notifyUser("Reaction time: " + time + "ms");
             document.body.style.background = "";
             document.body.onclick = null;
-            earn(15);
-            unlock("Speed Demon");
+            addXP(15);
+            unlockAchievement("Speed Demon");
             document.getElementById("gameArea").innerHTML = "";
         };
     }, Math.random() * 3000 + 1000);
 }
 
-// Missions
+// Daily Mission
 function mission() {
-    earn(30);
-    unlock("Daily Hero");
+    addXP(30);
+    unlockAchievement("Daily Hero");
     document.getElementById("missionText").innerText = "Completed for today!";
 }
-
-// Initialize interface
-update();
 </script>
 
+<!-- EXTERNAL CORE SCRIPT -->
+<script src="app.js"></script>
 </body>
-  </html>
-  
+</html>
